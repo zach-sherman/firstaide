@@ -27,7 +27,7 @@ pub enum Error {
     #[error("configuration file not valid: {0}")]
     Invalid(#[from] toml::de::Error),
 
-    #[error("couuld not use configuration: {0}")]
+    #[error("could not use configuration: {0}")]
     Other(String),
 }
 
