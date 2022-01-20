@@ -6,44 +6,28 @@ use crate::sums;
 use bstr::ByteSlice;
 use shell_quote::bash;
 use std::env::vars_os;
-use std::fmt;
 use std::fs;
 use std::io::{self, Write};
 use tempfile;
+use thiserror::Error;
 
 pub const NAME: &str = "hook";
 
 type Result = std::result::Result<u8, Error>;
 
+#[derive(Debug, Error)]
 pub enum Error {
-    Config(config::Error),
-    Io(io::Error),
+    #[error(transparent)]
+    Config(#[from] config::Error),
+
+    #[error("input/output error: {0}")]
+    Io(#[from] io::Error),
+
+    #[error("could not capture outside environment")]
     EnvOutsideCapture,
+
+    #[error("problem decoding outside environment: {0}")]
     EnvOutsideDecode(bincode::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Error::*;
-        match self {
-            Config(err) => write!(f, "{}", err),
-            Io(err) => write!(f, "input/output error: {}", err),
-            EnvOutsideCapture => write!(f, "could not capture outside environment"),
-            EnvOutsideDecode(err) => write!(f, "problem decoding outside environment: {}", err),
-        }
-    }
-}
-
-impl From<config::Error> for Error {
-    fn from(error: config::Error) -> Self {
-        Error::Config(error)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Error::Io(error)
-    }
 }
 
 pub fn argspec<'a>() -> clap::App<'a> {
@@ -135,20 +119,16 @@ pub fn run(args: &clap::ArgMatches) -> Result {
                 let chunk_content =
                     include_bytes!("hook/active.sh").replace(b"__MESSAGE__", chunk_message);
                 handle.write_all(&chunk(&EnvironmentStatus::Okay.display(), &chunk_content))?;
-                handle.write_all(&chunk(
-                    "Computed environment follows (includes parent environment):",
-                    &env_diff_dump(&env_diff),
-                ))?;
             } else {
                 handle.write_all(&chunk(
                     &EnvironmentStatus::Stale.display(),
                     include_bytes!("hook/stale.sh"),
                 ))?;
-                handle.write_all(&chunk(
-                    "Computed environment follows (includes parent environment):",
-                    &env_diff_dump(&env_diff),
-                ))?;
             }
+            handle.write_all(&chunk(
+                "Computed environment follows (includes parent environment):",
+                &env_diff_dump(&env_diff),
+            ))?;
             // We want direnv to watch every file for which we calculate a
             // checksum, AND we want it to watch the firstaide cache file.
             {

@@ -2,38 +2,20 @@ use crate::cache;
 use crate::config;
 use crate::status::EnvironmentStatus;
 use crate::sums;
-use std::fmt;
 use std::io::{self, Write};
+use thiserror::Error;
 
 pub const NAME: &str = "status";
 
 type Result = std::result::Result<u8, Error>;
 
+#[derive(Debug, Error)]
 pub enum Error {
-    Config(config::Error),
-    Io(io::Error),
-}
+    #[error(transparent)]
+    Config(#[from] config::Error),
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Error::*;
-        match self {
-            Config(err) => write!(f, "{}", err),
-            Io(err) => write!(f, "input/output error: {}", err),
-        }
-    }
-}
-
-impl From<config::Error> for Error {
-    fn from(error: config::Error) -> Self {
-        Error::Config(error)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Error::Io(error)
-    }
+    #[error("input/output error: {0}")]
+    Io(#[from] io::Error),
 }
 
 pub fn argspec<'a>() -> clap::App<'a> {

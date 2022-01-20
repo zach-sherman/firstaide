@@ -1,9 +1,9 @@
 use bincode;
 use std::env;
 use std::ffi::OsString;
-use std::fmt;
 use std::fs;
 use std::io;
+use thiserror::Error;
 
 pub type Env = Vec<(OsString, OsString)>;
 
@@ -11,31 +11,13 @@ pub const NAME: &str = "env";
 
 type Result = std::result::Result<u8, Error>;
 
+#[derive(Debug, Error)]
 pub enum Error {
-    Io(io::Error),
-    Encode(bincode::Error),
-}
+    #[error("input/output error: {0}")]
+    Io(#[from] io::Error),
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Error::*;
-        match self {
-            Io(err) => write!(f, "input/output error: {}", err),
-            Encode(err) => write!(f, "could not encode environment: {}", err),
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Error::Io(error)
-    }
-}
-
-impl From<bincode::Error> for Error {
-    fn from(error: bincode::Error) -> Self {
-        Error::Encode(error)
-    }
+    #[error("could not encode environment: {0}")]
+    Encode(#[from] bincode::Error),
 }
 
 pub fn argspec<'a>() -> clap::App<'a> {

@@ -1,51 +1,34 @@
+use path_absolutize::Absolutize;
+use serde::Deserialize;
 use std::env;
 use std::ffi::OsStr;
-use std::fmt;
 use std::fs;
 use std::io;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-use path_absolutize::Absolutize;
-use serde::Deserialize;
-
+use thiserror::Error;
 
 use crate::sums;
 
 type Result = std::result::Result<Config, Error>;
 
+#[derive(Debug, Error)]
 pub enum Error {
-    Io(io::Error),
+    #[error("input/output error: {0}")]
+    Io(#[from] io::Error),
+
+    #[error("config file not found; started from {}", .0.display())]
     ConfigNotFound(PathBuf),
+
+    #[error("direnv not found on PATH")]
     DirenvNotFound,
-    Invalid(toml::de::Error),
+
+    #[error("configuration file not valid: {0}")]
+    Invalid(#[from] toml::de::Error),
+
+    #[error("could not use configuration: {0}")]
     Other(String),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Error::*;
-        match self {
-            Io(err) => write!(f, "input/output error: {}", err),
-            ConfigNotFound(path) => write!(f, "config file not found; started from {:?}", path),
-            DirenvNotFound => write!(f, "direnv not found on PATH"),
-            Invalid(err) => write!(f, "configuration file not valid: {}", err),
-            Other(message) => write!(f, "could not use configuration: {}", message),
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Error::Io(error)
-    }
-}
-
-impl From<toml::de::Error> for Error {
-    fn from(error: toml::de::Error) -> Self {
-        Error::Invalid(error)
-    }
 }
 
 #[derive(Debug)]
@@ -111,7 +94,7 @@ impl Config {
             .ancestors()
             .map(|path| path.join(".firstaide.toml"))
             .find(|path| path.is_file())
-            .ok_or(Error::ConfigNotFound(dir.to_path_buf()))?;
+            .ok_or_else(|| Error::ConfigNotFound(dir.to_path_buf()))?;
         let config_bytes: Vec<u8> = fs::read(&config_file)?;
         let config_data: ConfigData = toml::from_slice(&config_bytes)?;
 
@@ -134,9 +117,7 @@ impl Config {
                 .join(config_data.watch_exe)
                 .absolutize()?
                 .to_path_buf(),
-            direnv_exe: search_path("direnv")
-                .ok_or(Error::DirenvNotFound)?
-                ,
+            direnv_exe: search_path("direnv").ok_or(Error::DirenvNotFound)?,
             parent_dir: datum_dir
                 .join(config_data.parent_dir)
                 .absolutize()?
