@@ -1,5 +1,5 @@
 { sources ? import ./nix/sources.nix { }, pkgs ? import sources.nixpkgs { }
-, cargoSha256 ? "iOFO1poFXcX5BVLFwYj6sv+LxI1iGcqU/meaaWaB0eg=", ... }:
+, cargoSha256 ? "RSvkJhXS4neUaNVaHPRjEGqW2/pb51FbNtCoX2a4ePs=", ... }:
 with pkgs;
 let
   sources = import ./nix/sources.nix;
