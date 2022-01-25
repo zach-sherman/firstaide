@@ -144,6 +144,24 @@ fn build(config: config::Config) -> Result<u8> {
 
 fn check_direnv_version(config: &config::Config) -> Result<()> {
     let version_min = semver::Version::new(2, 21, 2);
+    let current_version = current_direnv_version(config)?;
+
+    if current_version < version_min {
+        bail!(
+            concat!(
+                "direnv is too old ({}); upgrade to {} or later.\n",
+                "--> Nix: nix-channel --update && nix-env --install direnv && nix-env --upgrade direnv\n",
+                "--> Homebrew: brew update && brew install direnv && brew upgrade direnv",
+            ),
+            current_version,
+            version_min,
+        );
+    } else {
+        Ok(())
+    }
+}
+
+fn current_direnv_version(config: &config::Config) -> Result<semver::Version> {
     let mut command = config.command_direnv();
     command.arg("version");
     let command_output = command
@@ -151,18 +169,5 @@ fn check_direnv_version(config: &config::Config) -> Result<()> {
         .context("could not read `direnv version` output")?;
 
     let version_string = String::from_utf8_lossy(&command_output.stdout);
-    let version = semver::Version::parse(&version_string).context("could not parse version")?;
-    if version < version_min {
-        bail!(
-            concat!(
-                "direnv is too old ({}); upgrade to {} or later.\n",
-                "--> Nix: nix-channel --update && nix-env --install direnv && nix-env --upgrade direnv\n",
-                "--> Homebrew: brew update && brew install direnv && brew upgrade direnv",
-            ),
-            version,
-            version_min,
-        );
-    } else {
-        Ok(())
-    }
+    semver::Version::parse(version_string.trim()).context("could not parse version")
 }
