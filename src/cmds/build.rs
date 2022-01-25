@@ -169,5 +169,5 @@ fn current_direnv_version(config: &config::Config) -> Result<semver::Version> {
         .context("could not read `direnv version` output")?;
 
     let version_string = String::from_utf8_lossy(&command_output.stdout);
-    semver::Version::parse(&version_string).context("could not parse version")
+    semver::Version::parse(version_string.trim()).context("could not parse version")
 }
