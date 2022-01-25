@@ -23,11 +23,11 @@ struct Config {
     // verbosity, and no fancy formatting.
     //
     /// Be more verbose
-    #[clap(long, conflicts_with("quiet"))]
+    #[clap(long, conflicts_with("quiet"), global = true)]
     verbose: bool,
 
     /// Be quieter
-    #[clap(long, conflicts_with("verbose"))]
+    #[clap(long, conflicts_with("verbose"), global = true)]
     quiet: bool,
 }
 
