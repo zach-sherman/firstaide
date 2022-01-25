@@ -1,5 +1,5 @@
-{ sources ? import ./nix/sources.nix { }, pkgs ? import sources.nixpkgs { }, ...
-}:
+{ sources ? import ./nix/sources.nix { }, pkgs ? import sources.nixpkgs { }
+, cargoSha256 ? "RSvkJhXS4neUaNVaHPRjEGqW2/pb51FbNtCoX2a4ePs=", ... }:
 with pkgs;
 let
   sources = import ./nix/sources.nix;
@@ -19,7 +19,7 @@ in rustPlatform.buildRustPackage rec {
   # I think this refers to the current state of the crates.io repo. To update,
   # replace the hash with all 0's and Nix will give you the right value to
   # stick in here.
-  cargoSha256 = "iOFO1poFXcX5BVLFwYj6sv+LxI1iGcqU/meaaWaB0eg=";
+  inherit cargoSha256;
 
   meta = with pkgs.lib; {
     description = "Bootstrap Nix environments.";
