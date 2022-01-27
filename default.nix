@@ -1,9 +1,7 @@
 { sources ? import ./nix/sources.nix { }, pkgs ? import sources.nixpkgs { }
 , cargoSha256 ? "RSvkJhXS4neUaNVaHPRjEGqW2/pb51FbNtCoX2a4ePs=", ... }:
 with pkgs;
-let
-  sources = import ./nix/sources.nix;
-  gitignore = import sources.gitignore { };
+let gitignore = pkgs.callPackage sources.gitignore { };
 in rustPlatform.buildRustPackage rec {
   pname = "firstaide";
   version = "0.1.6";
