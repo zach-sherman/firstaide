@@ -7,6 +7,8 @@ let
 in naersk.buildPackage {
   src = gitignore.gitignoreSource ./.;
 
+  buildInputs = [ pkgs.openssl pkgs.pkg-config ];
+
   doCheck = true;
   checkPhase = "cargo test";
 
