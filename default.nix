@@ -7,6 +7,11 @@ let
 in naersk.buildPackage {
   src = gitignore.gitignoreSource ./.;
 
+  buildInputs = [ pkgs.openssl pkgs.pkg-config ];
+
+  doCheck = true;
+  checkPhase = "cargo test";
+
   meta = with pkgs.lib; {
     description = "Bootstrap Nix environments.";
     homepage = "https://github.com/allenap/firstaide";
