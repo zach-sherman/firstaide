@@ -29,4 +29,4 @@ serde = { version = "1.0.136", features = ["derive"] }
 shell-quote = "0.3.0"
 spinners = "3.1.0"
 tempfile = "3.3.0"
-toml = "0.5.8"
+toml = "0.5.9"
