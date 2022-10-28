@@ -176,7 +176,7 @@ impl Config {
             .stdout
             .split(|&byte| byte == 0)
             .filter(|name| !name.is_empty());
-        let paths = names.map(|name| OsStr::from_bytes(name));
+        let paths = names.map(OsStr::from_bytes);
         Ok(paths.map(|path| self.abspath(path)).collect())
     }
 
