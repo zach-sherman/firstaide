@@ -65,7 +65,7 @@ impl Command {
         fn chunk(title: &str, chunk: &[u8]) -> Vec<u8> {
             let mut buf = Vec::new();
             let comments = title.lines().map(|line| format!("### {}\n", line));
-            buf.extend(comments.map(String::into_bytes).flatten());
+            buf.extend(comments.flat_map(String::into_bytes));
             buf.extend(chunk);
             buf.push(b'\n');
             buf
