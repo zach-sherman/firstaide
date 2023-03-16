@@ -28,5 +28,5 @@ semver = "1.0.16"
 serde = { version = "1.0.156", features = ["derive"] }
 shell-quote = "0.3.0"
 spinners = "4.1.0"
-tempfile = "3.3.0"
+tempfile = "3.4.0"
 toml = "0.5.11"
