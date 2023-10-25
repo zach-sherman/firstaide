@@ -139,7 +139,7 @@ impl Command {
             Err(_) => {
                 let inactive_message = bash::escape(&config.messages.inactive);
                 let chunk_content =
-                    include_bytes!("hook/stale.sh").replace(b"__MESSAGE__", inactive_message);
+                    include_bytes!("hook/inactive.sh").replace(b"__MESSAGE__", inactive_message);
                 handle
                     .write_all(&chunk(
                         &EnvironmentStatus::Unknown.display(),
