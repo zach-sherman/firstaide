@@ -52,12 +52,16 @@ impl AsRef<Path> for ParentDir {
 #[derive(Debug, Deserialize)]
 pub struct Messages {
     pub getting_started: String,
+    pub stale: String,
+    pub inactive: String,
 }
 
 impl Default for Messages {
     fn default() -> Self {
         Self {
-            getting_started: "aide --help".into(),
+            getting_started: "firstaide --help".into(),
+            stale: "firstaide build".into(),
+            inactive: "build firstaide and run \"firstaide build\"".into(),
         }
     }
 }
