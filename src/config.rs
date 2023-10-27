@@ -19,6 +19,7 @@ pub struct Config {
     pub watch_exe: PathBuf,
     pub direnv_exe: PathBuf,
     pub parent_dir: PathBuf,
+    pub hooks_dir: Option<PathBuf>,
     pub self_exe: PathBuf,
     pub messages: Messages,
 }
@@ -30,6 +31,8 @@ struct ConfigData {
     watch_exe: PathBuf,
     #[serde(default)]
     parent_dir: ParentDir,
+    #[serde(default)]
+    hooks_dir: Option<PathBuf>,
     #[serde(default)]
     messages: Messages,
 }
@@ -132,6 +135,16 @@ impl Config {
                 .absolutize()
                 .context("could not make an absolute path to the parent directory")?
                 .to_path_buf(),
+            hooks_dir: config_data
+                .hooks_dir
+                .map(|dir| {
+                    datum_dir
+                        .join(dir)
+                        .absolutize()
+                        .context("could not make an absolute path to the hooks directory")
+                        .map(|d| d.to_path_buf())
+                })
+                .transpose()?,
             self_exe: env::current_exe().context("could not get the current executable name")?,
             messages: config_data.messages,
         })

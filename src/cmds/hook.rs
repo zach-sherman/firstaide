@@ -19,6 +19,13 @@ pub struct Command {
     dir: Option<PathBuf>,
 }
 
+// which hook scripts to run
+struct Hooks {
+    inactive: Vec<u8>,
+    stale: Vec<u8>,
+    active: Vec<u8>,
+}
+
 impl Command {
     pub fn run(&self) -> Result<u8> {
         let config = config::Config::load(self.dir.as_ref()).context("could not load config")?;
@@ -43,6 +50,23 @@ impl Command {
         }
         .context("could not capture outside environment")?;
 
+        let hooks = match config.hooks_dir {
+            None => Hooks {
+                active: include_bytes!("./hook/active.sh").replace(
+                    b"__MESSAGE__",
+                    bash::escape(&config.messages.getting_started),
+                ),
+                inactive: include_bytes!("./hook/inactive.sh")
+                    .replace(b"__MESSAGE__", bash::escape(&config.messages.inactive)),
+                stale: include_bytes!("./hook/stale.sh")
+                    .replace(b"__MESSAGE__", bash::escape(&config.messages.stale)),
+            },
+            Some(ref dir) => Hooks {
+                active: std::fs::read(dir.join("active.sh"))?,
+                inactive: std::fs::read(dir.join("inactive.sh"))?,
+                stale: std::fs::read(dir.join("stale.sh"))?,
+            },
+        };
         // However, we prevent the parent environment from removing or wiping
         // DIRENV_WATCHES. This mirrors the behaviour of direnv's `direnv_load`
         // function; see `direnv stdlib`. We don't use `direnv_load` because it had
@@ -91,18 +115,12 @@ impl Command {
                 );
                 env_diff.simplify();
                 if sums::equal(&sums_now, &cache.sums) {
-                    let getting_started_message = bash::escape(&config.messages.getting_started);
-                    let chunk_content = include_bytes!("hook/active.sh")
-                        .replace(b"__MESSAGE__", getting_started_message);
                     handle
-                        .write_all(&chunk(&EnvironmentStatus::Okay.display(), &chunk_content))
+                        .write_all(&chunk(&EnvironmentStatus::Okay.display(), &hooks.active))
                         .context("could not write active hook")?;
                 } else {
-                    let stale_message = bash::escape(&config.messages.stale);
-                    let chunk_content =
-                        include_bytes!("hook/stale.sh").replace(b"__MESSAGE__", stale_message);
                     handle
-                        .write_all(&chunk(&EnvironmentStatus::Stale.display(), &chunk_content))
+                        .write_all(&chunk(&EnvironmentStatus::Stale.display(), &hooks.stale))
                         .context("could not write stale hook")?;
                 }
                 handle
@@ -137,13 +155,10 @@ impl Command {
                 }
             }
             Err(_) => {
-                let inactive_message = bash::escape(&config.messages.inactive);
-                let chunk_content =
-                    include_bytes!("hook/inactive.sh").replace(b"__MESSAGE__", inactive_message);
                 handle
                     .write_all(&chunk(
                         &EnvironmentStatus::Unknown.display(),
-                        &chunk_content,
+                        &hooks.inactive,
                     ))
                     .context("could not write inactive hook")?;
                 handle
